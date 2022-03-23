@@ -7,11 +7,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
-// Телеграм БОТ з hook
 const (
-	BotToken   = "5155673556:XXXXXXXXX"
 	WebhookURL = "https://379a-91-201-246-66.ngrok.io"
 )
 
@@ -48,35 +47,54 @@ func getNews(url string) (*RSS, error) {
 }
 
 func main() {
-	bot, err := tgbotapi.NewBotAPI(BotToken)
+	botToken := os.Getenv("BOT_TOKEN")
+	if botToken == "" {
+		fmt.Println("please provide bot token")
+		os.Exit(1)
+	}
+	bot, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Printf("Authorized on account %s\n", bot.Self.UserName)
+	//
+	//_, err = bot.Request(tgbotapi.DeleteWebhookConfig{})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
-	wh, err := tgbotapi.NewWebhook(WebhookURL)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//wh, err := tgbotapi.NewWebhook(WebhookURL)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//_, err = bot.Request(wh)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//info, err := bot.GetWebhookInfo()
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//if info.LastErrorDate != 0 {
+	//	log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+	//}
+	//
+	//// новини які приходять в БОТ
+	//updates := bot.ListenForWebhook("/")
+	//go http.ListenAndServe(":8080", nil)
 
-	_, err = bot.Request(wh)
-	if err != nil {
-		log.Fatal(err)
-	}
+	bot.Debug = false
 
-	info, err := bot.GetWebhookInfo()
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	if info.LastErrorDate != 0 {
-		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
-	}
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
 
-	// новини які приходять в БОТ
-	updates := bot.ListenForWebhook("/")
-	go http.ListenAndServe(":8080", nil)
+	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
 		log.Printf("%+v\n", update)
